@@ -6,7 +6,7 @@ import { FeatureCard } from "@/components/FeatureCard";
 import { SecurityBadge } from "@/components/SecurityBadge";
 import { Button } from "@/components/ui/button";
 import Footer from "@/components/Footer";
-  
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -57,7 +57,7 @@ const Index = () => {
 
       {/* Features Section */}
       <section className="py-20 px-4 bg-vault-bg">
-        <div className="max-w-7xl mx-auto ">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">
               Complete Security <span className="text-primary">Workflow</span>
