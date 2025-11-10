@@ -1,0 +1,65 @@
+# ========================================
+# Django & Python
+# ========================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*$py.class
+
+# SQLite database (if you’re using it locally)
+db.sqlite3
+
+# Local settings or secrets
+.env
+*.env
+*.secret
+
+# Django static and media files (you’ll store them in S3)
+staticfiles/
+media/
+
+# Migrations cache
+*/migrations/__pycache__/
+*/migrations/*.py[cod]
+
+# ========================================
+# Virtual Environments
+# ========================================
+venv/
+env/
+ENV/
+.venv/
+.virtualenv/
+
+# ========================================
+# IDEs and Editors
+# ========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# ========================================
+# Logs and Debug Files
+# ========================================
+*.log
+logs/
+debug.log
+
+# ========================================
+# OS and Miscellaneous
+# ========================================
+.DS_Store
+Thumbs.db
+
+# ========================================
+# Node / Frontend (if you’re using React or JS frontend)
+# ========================================
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
