@@ -1,72 +1,107 @@
-import { useState, useCallback, useRef } from "react";
-import { Upload, X, CloudUpload } from "lucide-react";
+// UploadZone.tsx
+
+import React, { useState, useCallback, useRef } from "react";
+import { Upload, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SecurityBadge } from "./SecurityBadge";
 
 export const UploadZone = () => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploadStatus, setUploadStatus] = useState<
+        "idle" | "uploading" | "success" | "error"
+    >("idle");
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Drag handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+    // --- Drag Handlers (Omitted for brevity) ---
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        setUploadStatus("idle");
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      setSelectedFile(file);
-      console.log("Dropped file:", file);
-    }
-  }, []);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            setSelectedFile(file);
+        }
+    }, []);
 
-  // File input handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      console.log("Selected file:", file);
-    }
-  };
+    // --- File Input Handlers (Omitted for brevity) ---
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUploadStatus("idle");
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+        }
+    };
 
-  // Deselect file
-  const removeFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // reset input
-    }
-  };
+    const removeFile = () => {
+        setSelectedFile(null);
+        setUploadStatus("idle");
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""; // reset input
+        }
+    };
 
-  // Upload handler (mock for now)
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+    // 🚀 FINAL UPLOAD LOGIC: Targets the DRF ViewSet endpoint
+    const handleUpload = async () => {
+        if (!selectedFile) {
+            setUploadStatus("error");
+            return;
+        }
 
-    setIsUploading(true);
-    console.log("Encrypting:", selectedFile);
+        setUploadStatus("uploading");
 
-    // Simulate upload delay
-    setTimeout(() => {
-      setIsUploading(false);
-      alert(`✅ File "${selectedFile.name}" Encrypted successfully!`);
-      setSelectedFile(null);
-    }, 2000);
-  };
+        const formData = new FormData();
+        // CRITICAL: Key must be 'file' to match the model field in Django
+        formData.append("file", selectedFile);
+        
+        // 🎯 FIX: TARGETING DRF ENDPOINT:
+       // ... inside the handleUpload function in UploadZone.tsx
 
-  return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div
-        className={`
+// 🎯 FINAL FIX: Target the new, unique path defined in the router
+const API_URL = "/api/uploadfiles/"; 
+
+// ... rest of the fetch logic
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: formData,
+            });
+            
+            const data = await response.json();
+
+            if (response.ok) {
+                // Upload successful!
+                setUploadStatus("success");
+                console.log("✅ Upload successful. Django Response:", data);
+            } else {
+                // Upload failed (e.g., 400 Bad Request, 500 Server Error, or even 403)
+                setUploadStatus("error");
+                console.error("❌ Upload failed:", response.status, response.statusText, "Body:", data);
+            }
+        } catch (error) {
+            // Network failure (e.g., server is down)
+            setUploadStatus("error");
+            console.error("❌ Error during upload:", error);
+        }
+    };
+
+    // --- Component JSX (remains the same) ---
+    return (
+        <div className="w-full max-w-4xl mx-auto">
+            <div
+                className={`
           relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300
           ${
             isDragging
@@ -74,15 +109,15 @@ export const UploadZone = () => {
               : "border-vault-border bg-vault-surface hover:border-primary/50"
           }
         `}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="space-y-6">
-          {/* Upload Icon */}
-          <div className="flex justify-center">
-            <div
-              className={`
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                <div className="space-y-6">
+                    {/* Upload Icon */}
+                    <div className="flex justify-center">
+                        <div
+                            className={`
                 p-6 rounded-full border transition-all duration-300
                 ${
                   isDragging
@@ -90,79 +125,91 @@ export const UploadZone = () => {
                     : "bg-vault-bg border-vault-border"
                 }
               `}
-            >
-              <Upload
-                className={`h-8 w-8 ${
-                  isDragging ? "text-primary-foreground" : "text-primary"
-                }`}
-              />
+                        >
+                            <Upload
+                                className={`h-8 w-8 ${
+                                    isDragging ? "text-primary-foreground" : "text-primary"
+                                }`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* File Selection */}
+                    <div>
+                        <h3 className="text-xl font-semibold mb-2">
+                            Drop files to encrypt and upload
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                            Or click to select files from your device
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            Choose Files
+                        </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
+                    </div>
+
+                    {/* Security Badges */}
+                    <div className="flex flex-wrap justify-center gap-3">
+                        <SecurityBadge type="encryption" label="AES-128 Encryption" />
+                        <SecurityBadge type="protected" label="Blockchain Verified" />
+                        <SecurityBadge type="verified" label="AWS S3 Secured" />
+                    </div>
+                </div>
+
+                {/* File Preview */}
+                {selectedFile && (
+                    <div className="mt-6 p-4 border rounded-lg bg-vault-bg text-left flex justify-between items-center">
+                        <div>
+                            <p className="font-medium">Selected File:</p>
+                            <p className="text-sm text-muted-foreground">
+                                {selectedFile.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Size: {(selectedFile.size / 1024).toFixed(2)} KB
+                            </p>
+                        </div>
+                        <button
+                            onClick={removeFile}
+                            className="ml-4 text-red-500 hover:text-red-700"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+                )}
             </div>
-          </div>
 
-          {/* File Selection */}
-          <div>
-            <h3 className="text-xl font-semibold mb-2">
-              Drop files to Encrypt
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Or click to select files from your device
-            </p>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Choose Files
-            </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </div>
-
-          {/* Security Badges */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <SecurityBadge type="encryption" label="AES-256 Encryption" />
-            <SecurityBadge type="protected" label="Blockchain Verified" />
-            <SecurityBadge type="verified" label="AWS S3 Secured" />
-          </div>
+            {/* "Continue" Button and Status Display */}
+            {selectedFile && (
+                <div className="mt-6 flex flex-col items-center">
+                    <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={handleUpload}
+                        disabled={uploadStatus === "uploading"}
+                    >
+                        {uploadStatus === "uploading" ? "Uploading..." : "Continue"}
+                    </Button>
+                    {uploadStatus === "success" && (
+                        <p className="text-green-500 mt-2 flex items-center gap-1">
+                            <Check className="h-4 w-4" /> Upload successful!
+                        </p>
+                    )}
+                    {uploadStatus === "error" && (
+                        <p className="text-red-500 mt-2">
+                            Failed to upload. Please try again.
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
-
-        {/* File Preview */}
-        {selectedFile && (
-          <div className="mt-6 p-4 border rounded-lg bg-vault-bg text-left space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Selected File:</p>
-                <p className="text-sm text-muted-foreground">{selectedFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  Size: {(selectedFile.size / 1024).toFixed(2)} KB
-                </p>
-              </div>
-              <button
-                onClick={removeFile}
-                className="ml-4 text-red-500 hover:text-red-700"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Upload Button */}
-            <Button
-              onClick={handleUpload}
-              disabled={isUploading}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <CloudUpload className="h-4 w-4" />
-              {isUploading ? "Encrypting..." : "Encrypt"}
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
 };
-
-export default UploadZone;
