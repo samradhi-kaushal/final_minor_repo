@@ -1,23 +1,30 @@
 from django.db import models
-from django.contrib.auth import get_user_model # CRITICAL: Needed for the user link
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 import os
 
-User = get_user_model() # Define the User model alias
+User = get_user_model()
 
-class VaultFile(models.Model): # <--- Ensure this name is correct
+class VaultFile(models.Model):
+    """
+    Model to store uploaded files along with user association and blockchain hash for verification.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # This field will store the uploaded file itself
-    uploaded_file = models.FileField(upload_to='vault/%Y/%m/%d/') 
+    # File storage path inside MEDIA_ROOT/secure_vault_files/yyyy/mm/dd/
+    uploaded_file = models.FileField(upload_to='secure_vault_files/')
     file_name = models.CharField(max_length=255)
+    blockchain_hash = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Cryptographic hash for blockchain verification."
+    )
     uploaded_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.file_name
 
-    # Optional but recommended: clean up files when the record is deleted
     def delete(self, *args, **kwargs):
-        if self.uploaded_file:
-            if os.path.isfile(self.uploaded_file.path):
-                os.remove(self.uploaded_file.path)
+        if self.uploaded_file and os.path.isfile(self.uploaded_file.path):
+            os.remove(self.uploaded_file.path)
         super().delete(*args, **kwargs)
