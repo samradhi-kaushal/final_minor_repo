@@ -3,15 +3,16 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR is the 'backend' folder
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = BASE_DIR.parent / 'media' 
 MEDIA_URL = '/media/'
+
 # --- Path Calculation FIX ---
 # Go up two levels to ProjectRoot/
 PROJECT_ROOT = BASE_DIR.parent.parent
 
 # The path to the built frontend files
-FRONTEND_DIST_DIR = PROJECT_ROOT / 'CryptoVault'/ 'dist'
+FRONTEND_DIST_DIR = PROJECT_ROOT / 'final_minor_repo' / 'dist'
 
 # 🛑 CRITICAL DEBUG STEP: Check the calculated path
 print(f"\n--- DEBUG PATH CHECK ---")
@@ -40,11 +41,10 @@ INSTALLED_APPS = [
     'corsheaders', 
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
-    # Your App
+    # Your Apps
     'users',
     'api',
 ]
- 
 
 # 🛑 CRITICAL DEBUG LINE
 print(f"*** DEBUG MEDIA ROOT: {MEDIA_ROOT}")
@@ -89,8 +89,8 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # 🎯 STATIC FILES (Serving CSS, JS, Images)
 # -------------------------------------------------------------
 
-
 STATIC_URL = '/static/'
+
 # STATICFILES_DIRS must also point to the 'dist' folder
 STATICFILES_DIRS = [
     FRONTEND_DIST_DIR,
@@ -102,7 +102,6 @@ STATICFILES_DIRS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -113,7 +112,7 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-   # Allow the frontend development server
+    # Allow the frontend development server
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     
@@ -134,11 +133,24 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# File: settings.py
 
-# ... (Existing settings)
+# -------------------------------------------------------------
+# 🎯 SIMPLE JWT SETTINGS
+# -------------------------------------------------------------
+
 from datetime import timedelta
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+# -------------------------------------------------------------
+# 🛑 MEDIA FILES SERVING
+# -------------------------------------------------------------
+
+# During development, ensure Django serves media files
+if DEBUG:
+    from django.conf.urls.static import static
+    urlpatterns = []
+    urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
