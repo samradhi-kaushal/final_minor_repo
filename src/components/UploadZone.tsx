@@ -1,10 +1,16 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Upload, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SecurityBadge } from "./SecurityBadge";
 import { useAuth } from "../context/AuthContext"; // Import your auth context
 
-export const UploadZone = () => {
+interface UploadZoneProps {
+  receivingUserId?: number | null;
+  receivingUsername?: string | null;
+  apiEndpoint?: string;
+}
+
+export const UploadZone = ({ receivingUserId = null, receivingUsername = null, apiEndpoint = "/api/uploadfiles/" }: UploadZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<
@@ -12,8 +18,17 @@ export const UploadZone = () => {
   >("idle");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Get token from auth context
-  const { accessToken } = useAuth();
+  // Get token from auth context - ensure it's loaded
+  const { accessToken, isAuthenticated } = useAuth();
+  
+  // Wait for auth to initialize
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      console.log("UploadZone: Access token loaded:", accessToken.substring(0, 20) + "...");
+    } else {
+      console.warn("UploadZone: Access token not available yet");
+    }
+  }, [isAuthenticated, accessToken]);
 
   // --- Drag Handlers ---
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -61,21 +76,33 @@ export const UploadZone = () => {
       return;
     }
 
+    // Check if access token is available
+    if (!accessToken) {
+      setUploadStatus("error");
+      console.error("❌ Access token not available. Please log in again.");
+      return;
+    }
+
     setUploadStatus("uploading");
-    console.log("Access Token in UploadZone:", accessToken);
+    console.log("Access Token in UploadZone:", accessToken ? accessToken.substring(0, 20) + "..." : "null");
     const formData = new FormData();
     formData.append("uploaded_file", selectedFile);
-
-    const API_URL = "/api/uploadfiles/";
+    
+    // Add receiving_user if provided (prefer ID, fallback to username)
+    if (receivingUserId) {
+      formData.append("receiving_user", receivingUserId.toString());
+    } else if (receivingUsername) {
+      formData.append("receiving_username", receivingUsername);
+    }
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         body: formData,
-        headers: accessToken
-          ? { Authorization: `Bearer ${accessToken}` }
-          : undefined,
-        // Don't include Content-Type: browser sets it for FormData
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          // Don't include Content-Type: browser sets it for FormData
+        },
       });
 
       const data = await response.json();
@@ -83,6 +110,17 @@ export const UploadZone = () => {
       if (response.ok) {
         setUploadStatus("success");
         console.log("✅ Upload successful. Django Response:", data);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('fileUploaded', { detail: data }));
+        
+        // Reset file selection after successful upload
+        setTimeout(() => {
+          setSelectedFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        }, 2000);
       } else {
         setUploadStatus("error");
         console.error(
