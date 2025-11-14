@@ -1,72 +1,116 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Footer from '@/components/Footer';
-import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Header from '@/components/Header';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, X, Zap, Shield, Clock, Lock, Share2, HardDriveDownload } from 'lucide-react';
+import { Shield, User, Inbox } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UploadZone } from '@/components/UploadZone';
+import FileCard from '@/components/FileCard';
+import { useAuth } from '@/context/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import heroBg from '@/assets/sharebg.jpg';
 
+interface ReceivedFile {
+  id: number;
+  uploaded_file: string;
+  file_name: string;
+  uploaded_at: string;
+  blockchain_hash: string;
+  encryptionType?: string;
+  blockchainStatus?: string;
+  syncStatus?: string;
+  size?: string;
+  uploadDate?: string;
+}
+
 const FileSharing = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [transferMethod, setTransferMethod] = useState<'lightning' | 'sentinel' | null>(null);
-  const [expiryTime, setExpiryTime] = useState('24h');
-  const [passwordProtection, setPasswordProtection] = useState(false);
-  const [password, setPassword] = useState('');
-  const [generateLink, setGenerateLink] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { isAuthenticated, accessToken } = useAuth();
+  const [transferMethod, setTransferMethod] = useState<'sentinel' | null>(null);
+  const [showReceivingUserDialog, setShowReceivingUserDialog] = useState(false);
+  const [receivingUsername, setReceivingUsername] = useState('');
+  const [receivedFiles, setReceivedFiles] = useState<ReceivedFile[]>([]);
+  const [loadingReceived, setLoadingReceived] = useState(true);
   const { toast } = useToast();
 
-  const formatFileSize = (bytes: number) => {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-    
-  const handleFileSelect = (file: File) => setSelectedFile(file);
-  
-  const handleDrop = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length > 0) handleFileSelect(files[0]);
-    }, []);
-    
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) handleFileSelect(files[0]);
-  };
-
-  const removeFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleSelectMethod = (method: 'lightning' | 'sentinel') => {
+  const handleSelectMethod = (method: 'sentinel') => {
     setTransferMethod(method);
+    // Show receiving user dialog when method is selected
+    setShowReceivingUserDialog(true);
     toast({
-      title: method === 'lightning' ? "Lightning Transfer Selected" : "Sentinel Transfer Selected",
-      description: method === 'lightning'
-        ? "Instant transfer with less security."
-        : "Secure cloud-based transfer with verification.",
+      title: "Sentinel Transfer Selected",
+      description: "Secure cloud-based transfer with verification.",
     });
+  };
+
+  // Fetch received files
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
+    const fetchReceivedFiles = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/v1/files/received_files/', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const formattedFiles = (Array.isArray(data) ? data : []).map((file: any) => ({
+            id: file.id,
+            uploaded_file: file.uploaded_file,
+            file_name: file.file_name,
+            uploaded_at: file.uploaded_at,
+            blockchain_hash: file.blockchain_hash,
+            encryptionType: 'AES-256',
+            blockchainStatus: file.blockchain_hash ? 'Verified' : 'Pending',
+            syncStatus: 'Synced',
+            size: 'N/A',
+            uploadDate: new Date(file.uploaded_at).toLocaleDateString(),
+          }));
+          setReceivedFiles(formattedFiles);
+        }
+      } catch (error) {
+        console.error('Error fetching received files:', error);
+      } finally {
+        setLoadingReceived(false);
+      }
+    };
+
+    fetchReceivedFiles();
+  }, [isAuthenticated, accessToken]);
+
+  const handleReceivingUserSubmit = () => {
+    if (!receivingUsername.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a username for the receiving user.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Close dialog - username will be sent to backend which will look it up
+    setShowReceivingUserDialog(false);
+    toast({
+      title: "Receiving User Set",
+      description: `File will be shared with ${receivingUsername}`,
+    });
+  };
+
+  const handleCancelReceivingUser = () => {
+    setShowReceivingUserDialog(false);
+    setReceivingUsername('');
+    setTransferMethod(null);
   };
 
   return (
@@ -93,84 +137,124 @@ const FileSharing = () => {
 
       {/* Transfer Method Selection */}
       <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-<Button
-  variant="lightning"
-  size="lg"
-  onClick={() => handleSelectMethod('lightning')}
-  className={`
-    h-auto p-6 flex-col space-y-3 relative transition-all duration-300
-    ${transferMethod === 'lightning' ? 'scale-105 shadow-[0_0_25px_2px_rgba(0,255,222,0.5)]' : ''}
-  `}
->
-  <Zap className="h-8 w-8" />
-  <div className="space-y-1 text-center">
-    <div className="font-bold text-lg">Lightning Method</div>
-    <div className="text-sm opacity-90">Instant, fast, less secure</div>
-  </div>
-</Button>
-
-<Button
-  variant="sentinel"
-  size="lg"
-  onClick={() => handleSelectMethod('sentinel')}
-  className={`
-    h-auto p-6 flex-col space-y-3 relative transition-all duration-300
-    ${transferMethod === 'sentinel' ? 'scale-105 shadow-[0_0_25px_2px_rgba(0,255,222,0.5)]' : ''}
-  `}
->
-  <Shield className="h-8 w-8" />
-  <div className="space-y-1 text-center">
-    <div className="font-bold text-lg">Sentinel Method</div>
-    <div className="text-sm opacity-90">Secure cloud-based with verification</div>
-  </div>
-</Button>
-
-</div>
-
-
-        {/* Upload Zone – only visible if method is selected */}
-        {transferMethod && (
-          <div
-            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300
-              ${isDragging ? 'border-primary bg-primary/5 scale-102' : 'border-border hover:border-primary/50 bg-vault-surface'}
+        <div className="flex justify-center mb-8">
+          <Button
+            variant="sentinel"
+            size="lg"
+            onClick={() => handleSelectMethod('sentinel')}
+            className={`
+              h-auto p-6 flex-col space-y-3 relative transition-all duration-300
+              ${transferMethod === 'sentinel' ? 'scale-105 shadow-[0_0_25px_2px_rgba(0,255,222,0.5)]' : ''}
             `}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
           >
-            <div className="space-y-6">
-              <div className="flex justify-center">
-                <div className={`p-6 rounded-full border transition-all duration-300 ${isDragging ? 'bg-gradient-primary border-primary' : 'bg-vault-bg border-vault-border'}`}>
-                  <Upload className={`h-8 w-8 ${isDragging ? 'text-primary-foreground' : 'text-primary'}`} />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Drop files to Upload</h3>
-                <p className="text-muted-foreground mb-4">Or click to select files from your device</p>
-                <Button variant="outline" size="lg" onClick={() => fileInputRef.current?.click()}>Choose Files</Button>
-                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileInputChange} />
-              </div>
+            <Shield className="h-8 w-8" />
+            <div className="space-y-1 text-center">
+              <div className="font-bold text-lg">Sentinel Method</div>
+              <div className="text-sm opacity-90">Secure cloud-based transfer with verification</div>
             </div>
+          </Button>
+        </div>
 
-            {selectedFile && (
-              <div className="mt-6 p-4 border rounded-lg bg-vault-bg text-left space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">Selected File:</p>
-                    <p className="text-sm text-muted-foreground">{selectedFile.name}</p>
-                    <p className="text-xs text-muted-foreground">Size: {(selectedFile.size / 1024).toFixed(2)} KB</p>
-                  </div>
-                  <button onClick={removeFile} className="ml-4 text-red-500 hover:text-red-700">
-                    <X className="h-5 w-5" />
-                  </button>
+
+        {/* Upload Zone – only visible if method is selected and receiving user is set */}
+        {transferMethod && !showReceivingUserDialog && (
+          <div className="mt-8">
+            {receivingUsername && (
+              <div className="mb-4 p-4 bg-vault-surface border border-vault-border rounded-lg">
+                <div className="flex items-center space-x-2 text-sm">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Sharing with:</span>
+                  <span className="font-semibold text-foreground">{receivingUsername}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setReceivingUsername('');
+                      setShowReceivingUserDialog(true);
+                    }}
+                    className="ml-auto"
+                  >
+                    Change
+                  </Button>
                 </div>
               </div>
             )}
+            <UploadZone receivingUsername={receivingUsername} apiEndpoint="http://127.0.0.1:8000/api/v1/uploadfiles/" />
           </div>
         )}
       </div>
+
+      {/* Received Files Section */}
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold mb-4 flex items-center gap-3">
+            <Inbox className="h-8 w-8 text-primary" />
+            Received Files
+          </h2>
+          <p className="text-muted-foreground">
+            Files that have been shared with you
+          </p>
+        </div>
+
+        {loadingReceived ? (
+          <p className="text-center text-muted-foreground">Loading received files...</p>
+        ) : receivedFiles.length === 0 ? (
+          <p className="text-center text-muted-foreground">No files have been received yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {receivedFiles.map((file) => (
+              <FileCard 
+                key={file.id} 
+                file={{
+                  id: file.id.toString(),
+                  name: file.file_name,
+                  uploadDate: file.uploadDate || new Date(file.uploaded_at).toLocaleDateString(),
+                  encryptionType: file.encryptionType || 'AES-256',
+                  blockchainStatus: file.blockchainStatus || (file.blockchain_hash ? 'Verified' : 'Pending'),
+                  syncStatus: file.syncStatus || 'Synced',
+                  size: file.size || 'N/A',
+                }} 
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Receiving User Dialog */}
+      <Dialog open={showReceivingUserDialog} onOpenChange={setShowReceivingUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Receiving User</DialogTitle>
+            <DialogDescription>
+              Please enter the username of the user who will receive this file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="receiving-username">Username</Label>
+            <Input
+              id="receiving-username"
+              placeholder="Enter username"
+              value={receivingUsername}
+              onChange={(e) => setReceivingUsername(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleReceivingUserSubmit();
+                }
+              }}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelReceivingUser}>
+              Cancel
+            </Button>
+            <Button onClick={handleReceivingUserSubmit} disabled={!receivingUsername.trim()}>
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
