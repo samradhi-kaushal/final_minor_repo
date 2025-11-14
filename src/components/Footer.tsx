@@ -1,7 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { LogOut } from "lucide-react";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <footer className="relative border-t border-vault-border py-12 px-4">
       <div className="absolute inset-0 bg-gradient-primary opacity-30"></div>
@@ -24,9 +34,19 @@ const Footer = () => {
         </div>
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-2">Account</h3>
-          <Button className="bg-gradient-primary">
-            <Link to="/login">Login</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button 
+              className="bg-gradient-primary flex items-center space-x-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
+          ) : (
+            <Button className="bg-gradient-primary" asChild>
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
         </div>
       </div>
     </footer>
