@@ -1,168 +1,98 @@
-import { useState, useCallback, useRef } from "react";
-import { Upload, X, CloudUpload } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SecurityBadge } from "./SecurityBadge";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import cryptovaultLogo from "@/assets/cryptovault-logo.png";
+import { useAuth } from "../context/AuthContext";
 
-export const FileUpload = () => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+export const Header = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, username, logout } = useAuth();
 
-  // Drag handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      setSelectedFile(file);
-      console.log("Dropped file:", file);
-    }
-  }, []);
-
-  // File input handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      console.log("Selected file:", file);
-    }
-  };
-
-  // Deselect file
-  const removeFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // reset input
-    }
-  };
-
-  // Upload handler (mock for now)
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    setIsUploading(true);
-    console.log("Uploading file to cloud:", selectedFile);
-
-    // Simulate upload delay
-    setTimeout(() => {
-      setIsUploading(false);
-      alert(`✅ File "${selectedFile.name}" uploaded to cloud successfully!`);
-      setSelectedFile(null);
-    }, 2000);
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div
-        className={`
-          relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300
-          ${
-            isDragging
-              ? "border-primary bg-primary/5 scale-102"
-              : "border-vault-border bg-vault-surface hover:border-primary/50"
-          }
-        `}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="space-y-6">
-          {/* Upload Icon */}
-          <div className="flex justify-center">
-            <div
-              className={`
-                p-6 rounded-full border transition-all duration-300
-                ${
-                  isDragging
-                    ? "bg-gradient-primary border-primary"
-                    : "bg-vault-bg border-vault-border"
-                }
-              `}
-            >
-              <Upload
-                className={`h-8 w-8 ${
-                  isDragging ? "text-primary-foreground" : "text-primary"
-                }`}
-              />
+    <header className="bg-vault-bg border-b border-vault-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3">
+            <img src={cryptovaultLogo} alt="CryptoVault" className="h-8 w-8 rounded-lg" />
+            <div className="flex items-center space-x-2">
+              <span className="text-xl font-bold bg-gradient-crypto bg-clip-text text-transparent">
+                CryptoVault
+              </span>
             </div>
-          </div>
+          </Link>
 
-          {/* File Selection */}
-          <div>
-            <h3 className="text-xl font-semibold mb-2">
-              Drop files to upload
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Or click to select files from your device
-            </p>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Choose Files
+          {/* Navigation - Only show when authenticated */}
+          {isAuthenticated && (
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link 
+                to="/vault" 
+                className={`text-foreground hover:text-primary transition-smooth ${location.pathname === '/vault' ? 'text-primary' : ''}`}
+              >
+                Vault
+              </Link>
+              <Link 
+                to="/share" 
+                className={`text-foreground hover:text-primary transition-smooth ${location.pathname === '/share' ? 'text-primary' : ''}`}
+              >
+                Share
+              </Link>
+              <Link 
+                to="/audit" 
+                className={`text-foreground hover:text-primary transition-smooth ${location.pathname === '/audit' ? 'text-primary' : ''}`}
+              >
+                Audit
+              </Link>
+              <Link 
+                to="/download" 
+                className={`text-foreground hover:text-primary transition-smooth ${location.pathname === '/download' ? 'text-primary' : ''}`}
+              >
+                Download
+              </Link>
+            </nav>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
+              <>
+                <div className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span className="text-foreground">{username}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button variant="default" size="sm" className="bg-gradient-crypto" asChild>
+                  <Link to="/signup">Get Started</Link>
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="sm" className="md:hidden">
+              <Menu className="h-5 w-5" />
             </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </div>
-
-          {/* Security Badges */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <SecurityBadge type="encryption" label="AES-256 Encryption" />
-            <SecurityBadge type="protected" label="Blockchain Verified" />
-            <SecurityBadge type="verified" label="AWS S3 Secured" />
           </div>
         </div>
-
-        {/* File Preview */}
-        {selectedFile && (
-          <div className="mt-6 p-4 border rounded-lg bg-vault-bg text-left space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Selected File:</p>
-                <p className="text-sm text-muted-foreground">{selectedFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  Size: {(selectedFile.size / 1024).toFixed(2)} KB
-                </p>
-              </div>
-              <button
-                onClick={removeFile}
-                className="ml-4 text-red-500 hover:text-red-700"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Upload Button */}
-            <Button
-              onClick={handleUpload}
-              disabled={isUploading}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <CloudUpload className="h-4 w-4" />
-              {isUploading ? "Uploading..." : "Upload to Cloud"}
-            </Button>
-          </div>
-        )}
       </div>
-    </div>
+    </header>
   );
 };
-
-export default FileUpload;
+export default Header;
