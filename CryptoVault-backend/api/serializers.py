@@ -9,16 +9,36 @@ class VaultFileSerializer(serializers.ModelSerializer):
     uploaded_file = serializers.FileField()
     # Display only the filename
     file_name = serializers.SerializerMethodField()
-    # Optional: Show the user’s primary key if needed
+    # Optional: Show the user's primary key if needed
     user = serializers.PrimaryKeyRelatedField(read_only=True)
+    # Receiving user (can be set during creation)
+    receiving_user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     def get_file_name(self, obj):
         return basename(obj.uploaded_file.name)
     
+    def create(self, validated_data):
+        # Extract receiving_user if present (it's passed from perform_create)
+        receiving_user = validated_data.pop('receiving_user', None)
+        # Create instance without saving first
+        instance = VaultFile(**validated_data)
+        # Set receiving_user_id as attribute BEFORE saving (so upload_to can access it)
+        if receiving_user:
+            instance.receiving_user_id = receiving_user.id
+            instance.receiving_user = receiving_user
+        # Now save the instance (file will be saved with receiving_user_id set)
+        # This ensures upload_to function can check receiving_user_id
+        instance.save()
+        return instance
+    
     class Meta:
         model = VaultFile
-        # Includes id, uploaded_file (actual file), file_name, uploaded_at, user, blockchain_hash
-        fields = ['id', 'uploaded_file', 'file_name', 'uploaded_at', 'blockchain_hash', 'user']
+        # Includes id, uploaded_file (actual file), file_name, uploaded_at, user, blockchain_hash, receiving_user
+        fields = ['id', 'uploaded_file', 'file_name', 'uploaded_at', 'blockchain_hash', 'user', 'receiving_user']
         read_only_fields = ('uploaded_at', 'user')
 
 # No changes to your UserRegistrationSerializer, as instructed
