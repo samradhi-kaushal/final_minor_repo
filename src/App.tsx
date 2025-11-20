@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import Vault from "./pages/Vault";
 import Share from "./pages/Share";
 import Audit from "./pages/Audit";
-import Download from "./pages/Download";
+import Cloud from "./pages/Download";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup"; 
@@ -38,7 +38,8 @@ const App = () => (
                     <Route path="/vault" element={<Vault />} />
                     <Route path="/share" element={<Share />} />
                     <Route path="/audit" element={<Audit />} />
-                    <Route path="/download" element={<Download />} />
+                    <Route path="/cloud" element={<Cloud />} />
+                    <Route path="/download" element={<Cloud />} />
                     
                     {/* 4. Catch-all for 404s */}
                     <Route path="*" element={<NotFound />} />

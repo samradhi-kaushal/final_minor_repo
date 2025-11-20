@@ -141,12 +141,15 @@ export const FileUpload = () => {
                   Size: {(selectedFile.size / 1024).toFixed(2)} KB
                 </p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={removeFile}
-                className="ml-4 text-red-500 hover:text-red-700"
+                className="ml-4 text-destructive hover:text-destructive"
               >
-                <X className="h-5 w-5" />
-              </button>
+                <X className="h-4 w-4 mr-2" />
+                
+              </Button>
             </div>
 
             {/* Upload Button */}

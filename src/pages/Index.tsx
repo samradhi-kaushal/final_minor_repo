@@ -1,7 +1,7 @@
 import { Shield, Lock, FileText, BarChart3, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { UploadZone } from "@/components/UploadZone";
+import { ClientEncryptUpload } from "@/components/ClientEncryptUpload";
 import { FeatureCard } from "@/components/FeatureCard";
 import { SecurityBadge } from "@/components/SecurityBadge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ const Index = () => {
               </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Share confidential files with AES-128 encryption, RSA key exchange, and blockchain verification. 
+              Share confidential files with AES-128 encryption, Fernet key exchange, and blockchain verification. 
               Every file is encrypted locally before upload and verified through immutable blockchain records.
             </p>
           </div>
@@ -42,7 +42,7 @@ const Index = () => {
             </div>
             <div className="flex items-center space-x-2 text-security-green">
               <Lock className="h-5 w-5" />
-              <span className="font-medium">RSA Key Exchange</span>
+              <span className="font-medium">Fernet Key Exchange</span>
             </div>
             <div className="flex items-center space-x-2 text-security-green">
               <BarChart3 className="h-5 w-5" />
@@ -50,8 +50,8 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Upload Zone */}
-          <UploadZone />
+          {/* Client-Side Encryption Upload */}
+          <ClientEncryptUpload />
         </div>
       </section>
 
@@ -74,7 +74,7 @@ const Index = () => {
               description="Local AES-128 encryption before any data leaves your device"
               features={[
                 "Military-grade AES-128 encryption",
-                "RSA public key cryptography",
+                "FERNET public key cryptography",
                 "Local encryption - no plain data transmission",
                 "SHA-256 integrity verification"
               ]}

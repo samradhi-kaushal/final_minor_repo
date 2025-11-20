@@ -154,14 +154,9 @@ const Audit = () => {
 
                   <div className="flex items-center space-x-2 text-sm text-gray-400 mb-1">
                     <LinkIcon className="h-4 w-4" />
-                    <a
-                      href={log.uploaded_file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-white transition-colors truncate max-w-lg"
-                    >
+                    <span className="truncate max-w-lg">
                       {log.file_name}
-                    </a>
+                    </span>
                   </div>
 
                   <div className="text-xs text-security-green flex items-center space-x-2">
@@ -204,14 +199,9 @@ const Audit = () => {
 
                   <div className="flex items-center space-x-2 text-sm text-gray-400 mb-1">
                     <LinkIcon className="h-4 w-4" />
-                    <a
-                      href={log.uploaded_file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-white transition-colors truncate max-w-lg"
-                    >
+                    <span className="truncate max-w-lg">
                       {log.file_name}
-                    </a>
+                    </span>
                   </div>
 
                   <div className="text-xs text-security-green flex items-center space-x-2">

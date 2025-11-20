@@ -24,20 +24,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshToken: null,
   });
 
-  // Load state from local storage on component mount
+  // Clear localStorage on mount/refresh - users should log out on refresh
+  // This ensures users are logged out when the page refreshes
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    const refresh = localStorage.getItem('refreshToken');
-    const user = localStorage.getItem('username');
-
-    if (token && user && refresh) {
-      setAuthState({
-        isAuthenticated: true,
-        username: user,
-        accessToken: token,
-        refreshToken: refresh,
-      });
-    }
+    // Clear all auth data from localStorage on every page refresh
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('username');
+    // State is already initialized as not authenticated, so no need to update it
   }, []);
 
   const login = (username: string, accessToken: string, refreshToken: string) => {

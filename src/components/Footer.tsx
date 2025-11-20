@@ -29,7 +29,7 @@ const Footer = () => {
           <p>📧 <a href="mailto:9923103240@mail.jiit.ac.in" className="text-primary hover:text-primary-glow">9923103240@mail.jiit.ac.in</a></p>
           <p>📞 +91-9990260297</p>
           <p className="text-sm text-muted-foreground mt-4">
-            👤 Founders: Mudit Rastogi, Samradhi Kaushal, Deepanshu Khurana
+            👤 Made By : Mudit Rastogi, Samradhi Kaushal, Deepanshu Khurana
           </p>
         </div>
         <div>

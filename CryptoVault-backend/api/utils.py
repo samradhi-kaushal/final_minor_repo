@@ -10,9 +10,29 @@ import base64
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 DB_NAME = os.getenv("DB_NAME", "filesDB")
 
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
-fs = gridfs.GridFS(db)
+# MongoDB connection (optional - only used if MongoDB is needed)
+# Lazy initialization to avoid errors if MongoDB is not running
+_client = None
+_db = None
+_fs = None
+
+def get_mongo_client():
+    """Get MongoDB client (lazy initialization)"""
+    global _client, _db, _fs
+    if _client is None:
+        try:
+            _client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+            _db = _client[DB_NAME]
+            _fs = gridfs.GridFS(_db)
+        except Exception as e:
+            print(f"Warning: MongoDB connection failed: {e}. MongoDB features will be unavailable.")
+    return _client, _db, _fs
+
+# For backward compatibility, but won't fail if MongoDB is unavailable
+try:
+    client, db, fs = get_mongo_client()
+except Exception:
+    client = db = fs = None
 
 
 def generate_fernet_key():

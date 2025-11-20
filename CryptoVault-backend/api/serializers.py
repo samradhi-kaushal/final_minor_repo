@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from os.path import basename
-from .models import VaultFile
+from .models import VaultFile, CloudUploadLog
 
 class VaultFileSerializer(serializers.ModelSerializer):
     # Full file URL for download/view
@@ -57,3 +57,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         user = User.objects.create(**validated_data)
         return user
+
+
+class CloudUploadLogSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    user_id = serializers.IntegerField(read_only=True)
+    
+    class Meta:
+        model = CloudUploadLog
+        fields = ['id', 'user', 'user_id', 'file_name', 's3_key', 's3_url', 'file_size', 'content_type', 'uploaded_at']
+        read_only_fields = ('uploaded_at', 'user', 'user_id')

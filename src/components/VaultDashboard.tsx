@@ -8,6 +8,7 @@ import { DecryptionKeyTable } from "./DecryptionKeyTable";
 import Footer from "./Footer";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '../context/AuthContext'; // <-- Import the Auth hook
+import vaultImage from '../assets/vault.jpeg';
 
 // File data structure for FileCard component
 interface FileCardData {
@@ -145,24 +146,40 @@ const VaultDashboard = () => {
     const displayUsername = username || 'User'; 
 
     return (
-        <div className="min-h-screen bg-background bg-cover bg-center">
-            <Header />
+        <div className="min-h-screen relative">
+            {/* Background image with blur effect */}
+            <div 
+                className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+                style={{
+                    backgroundImage: `url(${vaultImage})`,
+                    filter: 'blur(8px)',
+                    transform: 'scale(1.1)',
+                    zIndex: 0
+                }}
+            />
+            {/* Overlay for better content readability */}
+            <div className="fixed inset-0 bg-background/60 z-10" />
             
-            <main className="container mx-auto px-6 py-8 space-y-8">
+            {/* Content */}
+            <div className="relative z-20">
+                <Header />
+                
+                <main className="container mx-auto px-6 py-8 space-y-8">
                 {/* 1. User Profile Section: Pass the dynamic username */}
                 <UserProfile username={displayUsername} /> 
 
                 {/* Upload Section */}
                 <section className="space-y-10">
-                    <div>
-                        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center">
-                            Upload Files
-                            <div className="ml-2 h-px flex-1 bg-gradient-primary opacity-90" />
-                        </h2>
-                        <UploadZone apiEndpoint="http://127.0.0.1:8000/api/v1/uploadfiles/" />
-                    </div>
-                </section> 	
-
+    <div>
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+            Upload Files
+            <div className="ml-2 h-px flex-1 bg-gradient-primary opacity-90" />
+        </h2>
+        
+        {/* UploadZone Component */}
+        <UploadZone apiEndpoint="http://127.0.0.1:8000/api/v1/uploadfiles/" />
+    </div>
+</section>
                 {/* 2. Files Grid Section */}
                 <section>
                     <div className="flex items-center justify-between mb-6">
@@ -207,8 +224,9 @@ const VaultDashboard = () => {
                         />
                     </div>
                 </section>
-            </main>
-            <Footer />
+                </main>
+                <Footer />
+            </div>
         </div>
     );
 };

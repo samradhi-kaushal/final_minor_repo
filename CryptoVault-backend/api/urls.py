@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import SecureFileViewSet, FileUploadView, CustomAuthToken, UserRegistrationView
+from .views import SecureFileViewSet, FileUploadView, CustomAuthToken, UserRegistrationView, CloudUploadLogView
 
 # For router-based viewset handling
 router = DefaultRouter(trailing_slash=True)  # Changed to True for action endpoints
@@ -32,4 +32,7 @@ urlpatterns = [
         'put': 'update',
         'delete': 'destroy'
     }), name='file-detail'),
+    
+    # Cloud upload logs
+    path('cloud-uploads/', CloudUploadLogView.as_view(), name='cloud-upload-logs'),
 ]

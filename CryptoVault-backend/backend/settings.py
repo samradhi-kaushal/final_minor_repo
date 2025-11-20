@@ -8,11 +8,11 @@ MEDIA_ROOT = BASE_DIR.parent / 'media'
 MEDIA_URL = '/media/'
 
 # --- Path Calculation FIX ---
-# Go up two levels to ProjectRoot/
-PROJECT_ROOT = BASE_DIR.parent.parent
+# Go up one level to ProjectRoot (Finalaf/)
+PROJECT_ROOT = BASE_DIR.parent
 
 # The path to the built frontend files
-FRONTEND_DIST_DIR = PROJECT_ROOT / 'final_minor_repo' / 'dist'
+FRONTEND_DIST_DIR = PROJECT_ROOT / 'dist'
 
 # 🛑 CRITICAL DEBUG STEP: Check the calculated path
 print(f"\n--- DEBUG PATH CHECK ---")
@@ -26,7 +26,7 @@ print(f"------------------------\n")
 
 SECRET_KEY = 'django-insecure-=b+@@!^crnxvo3#dx(bi_07w@(%3)onzqkffsdl&(-bzk+(3_5'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -96,6 +96,9 @@ STATICFILES_DIRS = [
     FRONTEND_DIST_DIR,
 ]
 
+# STATIC_ROOT is where collectstatic will gather all static files for production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # -------------------------------------------------------------
 # 🎯 DRF & CORS (unchanged)
 # -------------------------------------------------------------
@@ -112,14 +115,19 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    # Allow the frontend development server
+    # Allow the frontend development server (Vite default port)
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     
-    # You should already have the backend's own loopback addresses here
+    # Backend's own loopback addresses
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+# Allow credentials for CORS
+CORS_ALLOW_CREDENTIALS = True
 
 # -------------------------------------------------------------
 # 🎯 DATABASE & DEFAULTS (unchanged)
@@ -148,9 +156,4 @@ SIMPLE_JWT = {
 # -------------------------------------------------------------
 # 🛑 MEDIA FILES SERVING
 # -------------------------------------------------------------
-
-# During development, ensure Django serves media files
-if DEBUG:
-    from django.conf.urls.static import static
-    urlpatterns = []
-    urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
+# Media files are served via urlpatterns in urls.py

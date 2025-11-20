@@ -10,17 +10,17 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# Define the path to your log file (placed in the project's root directory)
-# NOTE: BASE_DIR is two levels up from 'users/' in your structure.
-LOGIN_LIST_FILE = os.path.join(settings.BASE_DIR.parent, 'login_list.txt')
+# Define the path to your log file 
+# NOTE: BASE_DIR is the 'backend' folder, so we go up two levels to project root
+LOGIN_LIST_FILE = os.path.join(settings.BASE_DIR.parent.parent, 'login_list.txt')
 
-# 1. Sign Up View (API Endpoint)
+# 1. Sign Up View 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
-    permission_classes = (AllowAny,) # Allow unauthenticated users to register
+    permission_classes = (AllowAny,) 
     serializer_class = RegisterSerializer
 
-# 2. Login View (API Endpoint - Custom SimpleJWT implementation)
+# 2. Login View 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
     Overrides the default SimpleJWT login view to add the file logging logic.

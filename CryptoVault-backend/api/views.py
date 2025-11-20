@@ -10,8 +10,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.http import HttpResponse, Http404
-from .serializers import UserRegistrationSerializer, VaultFileSerializer
-from .models import VaultFile
+from .serializers import UserRegistrationSerializer, VaultFileSerializer, CloudUploadLogSerializer
+from .models import VaultFile, CloudUploadLog
 from .utils import (
     generate_fernet_key,
     encrypt_fernet_key_with_aes,
@@ -336,7 +336,7 @@ class SecureFileViewSet(viewsets.ModelViewSet):
             )
 
 
-# Token authentication endpoint (optional - if you use DRF Token auth separately)
+# Token authentication endpoint 
 # You can remove this if you fully switch to JWT
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -355,3 +355,21 @@ class CustomAuthToken(ObtainAuthToken):
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+
+
+# Cloud Upload Logging Views
+class CloudUploadLogView(generics.ListCreateAPIView):
+    """
+    List cloud upload logs for authenticated user or create a new log entry.
+    """
+    serializer_class = CloudUploadLogSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Return only logs for the authenticated user"""
+        return CloudUploadLog.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        """Associate the log with the authenticated user"""
+        serializer.save(user=self.request.user)

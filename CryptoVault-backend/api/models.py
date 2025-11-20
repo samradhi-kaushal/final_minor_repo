@@ -9,16 +9,14 @@ def get_upload_path(instance, filename):
     """
     Determine upload path based on whether file is shared or personal.
     Shared files go to sharedfiles/, personal files go to secure_vault_files/.
-    Note: receiving_user might not be set yet when file is saved, so we check both
-    the receiving_user object and receiving_user_id attribute.
     """
     # Check if receiving_user is set (for shared files)
     if hasattr(instance, 'receiving_user') and instance.receiving_user:
         return f'sharedfiles/{filename}'
-    # Also check receiving_user_id in case it's set but not the object yet
+
     if hasattr(instance, 'receiving_user_id') and instance.receiving_user_id:
         return f'sharedfiles/{filename}'
-    # Default to personal vault files
+
     return f'secure_vault_files/{filename}'
 
 class VaultFile(models.Model):
@@ -64,3 +62,24 @@ class VaultFile(models.Model):
         if self.uploaded_file and os.path.isfile(self.uploaded_file.path):
             os.remove(self.uploaded_file.path)
         super().delete(*args, **kwargs)
+
+
+class CloudUploadLog(models.Model):
+    """
+    Model to track S3 cloud upload activity for users.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cloud_uploads')
+    file_name = models.CharField(max_length=255)
+    s3_key = models.CharField(max_length=500, help_text="S3 object key/path")
+    s3_url = models.URLField(max_length=1000, help_text="Full S3 URL of the uploaded file")
+    file_size = models.BigIntegerField(null=True, blank=True, help_text="File size in bytes")
+    content_type = models.CharField(max_length=255, null=True, blank=True)
+    uploaded_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = "Cloud Upload Log"
+        verbose_name_plural = "Cloud Upload Logs"
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.file_name} ({self.uploaded_at})"

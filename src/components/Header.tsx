@@ -50,10 +50,10 @@ export const Header = () => {
                 Audit
               </Link>
               <Link 
-                to="/download" 
-                className={`text-foreground hover:text-primary transition-smooth ${location.pathname === '/download' ? 'text-primary' : ''}`}
+                to="/cloud" 
+                className={`text-foreground hover:text-primary transition-smooth ${location.pathname === '/cloud' || location.pathname === '/download' ? 'text-primary' : ''}`}
               >
-                Download
+                Cloud
               </Link>
             </nav>
           )}
